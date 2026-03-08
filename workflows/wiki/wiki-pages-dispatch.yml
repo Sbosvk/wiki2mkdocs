@@ -1,0 +1,41 @@
+name: Dispatch Pages Build on Wiki Changes
+
+on:
+  gollum:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate configuration
+        env:
+          TARGET_REPO: ${{ vars.PAGES_TARGET_REPO }}
+          DISPATCH_TOKEN: ${{ secrets.PAGES_REPO_DISPATCH_TOKEN }}
+        run: |
+          test -n "$TARGET_REPO" || { echo "Missing var PAGES_TARGET_REPO"; exit 1; }
+          test -n "$DISPATCH_TOKEN" || { echo "Missing secret PAGES_REPO_DISPATCH_TOKEN"; exit 1; }
+
+      - name: Dispatch event
+        env:
+          TARGET_REPO: ${{ vars.PAGES_TARGET_REPO }}
+          DISPATCH_TOKEN: ${{ secrets.PAGES_REPO_DISPATCH_TOKEN }}
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_REF: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          curl -sSf -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $DISPATCH_TOKEN" \
+            "https://api.github.com/repos/$TARGET_REPO/dispatches" \
+            -d "{
+              \"event_type\":\"wiki_updated\",
+              \"client_payload\":{
+                \"wiki_repo\":\"${SOURCE_REPO}.wiki\",
+                \"wiki_ref\":\"master\",
+                \"wiki_sha\":\"$SOURCE_SHA\"
+              }
+            }"

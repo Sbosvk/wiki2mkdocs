@@ -1,0 +1,73 @@
+name: Build and Deploy Docs From Wiki Source
+
+on:
+  repository_dispatch:
+    types: [wiki_updated]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pages repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          pip install -r mkdocs/requirements.txt
+
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+
+      - name: Clone wiki repository
+        env:
+          WIKI_REPO: ${{ vars.WIKI_SOURCE_REPO }}
+          WIKI_BRANCH: ${{ vars.WIKI_SOURCE_BRANCH }}
+        run: |
+          test -n "$WIKI_REPO" || { echo "Set variable WIKI_SOURCE_REPO (example: MarechJ/hll_rcon_tool.wiki)"; exit 1; }
+          branch="${WIKI_BRANCH:-master}"
+          git clone --depth 1 --branch "$branch" "https://github.com/$WIKI_REPO.git" wiki-src
+
+      - name: Sync wiki files into mkdocs/docs
+        run: |
+          SOURCE_ROOT=wiki-src ./mkdocs/scripts/sync_wiki_to_mkdocs.sh
+
+      - name: Verify internal links are extensionless
+        run: |
+          ./mkdocs/scripts/check_internal_links.sh
+
+      - name: Build site
+        run: mkdocs build --strict
+        working-directory: mkdocs
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: mkdocs/site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
