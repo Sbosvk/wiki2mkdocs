@@ -1,0 +1,24 @@
+# Read more about configuration options on mkdocs.org
+site_name: ""           # Site title
+site_description: ""    # Describe your docs
+repo_url: ""            # github.com/username/repo
+repo_name: ""           # <username>/<repo name>
+edit_uri: ""            #Github wiki link
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      pygments_lang_class: true
+  - pymdownx.superfences
