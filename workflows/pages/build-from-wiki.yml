@@ -40,7 +40,7 @@ jobs:
           WIKI_REPO: ${{ vars.WIKI_SOURCE_REPO }}
           WIKI_BRANCH: ${{ vars.WIKI_SOURCE_BRANCH }}
         run: |
-          test -n "$WIKI_REPO" || { echo "Set variable WIKI_SOURCE_REPO (example: MarechJ/hll_rcon_tool.wiki)"; exit 1; }
+          test -n "$WIKI_REPO" || { echo "Set variable WIKI_SOURCE_REPO (example: acme/project.wiki)"; exit 1; }
           branch="${WIKI_BRANCH:-master}"
           git clone --depth 1 --branch "$branch" "https://github.com/$WIKI_REPO.git" wiki-src
 
