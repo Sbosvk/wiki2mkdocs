@@ -110,6 +110,38 @@ Create a token from the account that will trigger dispatch:
 9. MkDocs build runs with `--strict`.
 10. Site artifact is uploaded and deployed with `actions/deploy-pages`.
 
+## Wiki Filename Convention (Important)
+
+The sync pipeline builds folder paths and nav from wiki markdown filenames.
+Use this pattern for predictable output:
+
+`Section---Subsection---Page-Title.md`
+
+Rules:
+- Use `---` between hierarchy segments.
+- Use `-` inside words.
+- Filename must end with `.md`.
+- `Home.md` is special and maps to `index.md` (site root page).
+- `_Sidebar.md` and `_Footer.md` are ignored by sync.
+
+Ordering rules:
+- Optional numeric prefix per segment controls nav order:
+  - `1_Getting-Started---2_Installation---1_Requirements.md`
+- `N_` is stripped from displayed labels and URL slugs.
+- At each nav level, items with `N_` come first (sorted by number).
+- Remaining items without `N_` come after, sorted alphabetically.
+
+Examples:
+- `Home.md`
+- `1_Getting-Started---1_Installation---1_Requirements.md`
+- `1_Getting-Started---1_Installation---2_Install.md`
+- `2_User-Guide---1_Main-Interface---1_Home.md`
+
+What this becomes (roughly):
+- `getting-started/installation/requirements.md`
+- `getting-started/installation/install.md`
+- `user-guide/main-interface/home.md`
+
 ## MkDocs Base Config (`mkdocs.base.yml`)
 
 `mkdocs.base.yml` is your stable template for non-nav settings:
