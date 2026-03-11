@@ -44,6 +44,11 @@ jobs:
           branch="${WIKI_BRANCH:-master}"
           git clone --depth 1 --branch "$branch" "https://github.com/$WIKI_REPO.git" wiki-src
 
+      - name: Validate wiki links before sync
+        run: |
+          cd wiki-src
+          perl ../mkdocs/scripts/check_wiki_links.pl
+
       - name: Sync wiki files into mkdocs/docs
         run: |
           SOURCE_ROOT=wiki-src ./mkdocs/scripts/sync_wiki_to_mkdocs.sh

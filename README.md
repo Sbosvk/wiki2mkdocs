@@ -49,6 +49,7 @@ Create:
 - `mkdocs/scripts/generate_mkdocs_yml.pl`
 - `mkdocs/scripts/normalize_wiki_links.pl`
 - `mkdocs/scripts/normalize_admonitions.pl`
+- `mkdocs/scripts/check_wiki_links.pl`
 - `mkdocs/scripts/check_internal_links.sh`
 
 Copy from:
@@ -56,6 +57,7 @@ Copy from:
 - [`mkdocs/requirements.txt`](mkdocs/requirements.txt)
 - [`mkdocs/mkdocs.base.yml`](mkdocs/mkdocs.base.yml)
 - [`mkdocs/scripts/`](mkdocs/scripts)
+- [`mkdocs/scripts/wiki_file_rename/`](mkdocs/scripts/wiki_file_rename) (optional helper scripts)
 
 ## GitHub Settings You Must Configure
 
@@ -98,17 +100,18 @@ Create a token from the account that will trigger dispatch:
 3. It sends `repository_dispatch` (`wiki_updated`) to pages repo.
 4. Pages repo workflow starts (`build-from-wiki.yml`).
 5. Workflow clones the wiki repo (`WIKI_SOURCE_REPO`) into `wiki-src`.
-6. It runs `SOURCE_ROOT=wiki-src ./mkdocs/scripts/sync_wiki_to_mkdocs.sh`.
-7. Sync script runs:
+6. It validates wiki links with `check_wiki_links.pl`.
+7. It runs `SOURCE_ROOT=wiki-src ./mkdocs/scripts/sync_wiki_to_mkdocs.sh`.
+8. Sync script runs:
    - `generate_wiki_sync_map.pl` to build a deterministic mapping TSV
    - copy wiki markdown into `mkdocs/docs` structure
    - copy wiki `images/` into `mkdocs/docs/images` and `mkdocs/docs/assets/images`
    - `normalize_admonitions.pl` to convert GitHub alerts (`> [!NOTE]`, etc.) to MkDocs admonitions
    - `normalize_wiki_links.pl` to rewrite wiki links and normalize extensionless internal links
    - `generate_mkdocs_yml.pl` to regenerate `mkdocs/mkdocs.yml` from base config + generated map
-8. Workflow runs `check_internal_links.sh` (fails if `.md` links remain).
-9. MkDocs build runs with `--strict`.
-10. Site artifact is uploaded and deployed with `actions/deploy-pages`.
+9. Workflow runs `check_internal_links.sh` (fails if `.md` links remain).
+10. MkDocs build runs with `--strict`.
+11. Site artifact is uploaded and deployed with `actions/deploy-pages`.
 
 ## Wiki Filename Convention (Important)
 
@@ -173,10 +176,22 @@ Notes:
 
 ```bash
 git clone --depth 1 --branch master https://github.com/<owner>/<source-repo>.wiki.git wiki-src
+cd wiki-src && perl ../mkdocs/scripts/check_wiki_links.pl && cd ..
 SOURCE_ROOT=wiki-src ./mkdocs/scripts/sync_wiki_to_mkdocs.sh
 ./mkdocs/scripts/check_internal_links.sh
 cd mkdocs && mkdocs build --strict
 ```
+
+## Optional: Wiki Rename Helper
+
+If you need to rename wiki files in bulk (for example to introduce `N_` ordering prefixes), use:
+
+- [`mkdocs/scripts/wiki_file_rename/README.md`](mkdocs/scripts/wiki_file_rename/README.md)
+
+This helper includes:
+- map generation
+- dry-run and apply rename with `git mv`
+- pre/post wiki link checking
 
 ## Troubleshooting
 
@@ -188,3 +203,5 @@ cd mkdocs && mkdocs build --strict
   You forgot `SOURCE_ROOT=wiki-src` or wiki clone step.
 - Link check says `.md` links remain:
   run sync again and inspect `normalize_wiki_links.pl` behavior for that page pattern.
+- Wiki link validator reports missing page slugs/files:
+  run `perl mkdocs/scripts/check_wiki_links.pl` from the wiki clone root and fix/rename targets before syncing.
